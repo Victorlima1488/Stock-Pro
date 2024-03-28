@@ -2,7 +2,7 @@ import sqlite3
 from sqlite3 import Error
 
 def conexao_do_banco():
-    db_file = 'database/database.db'
+    db_file = 'app/database/database.db'
     
     try:
         conn = sqlite3.connect(db_file)
