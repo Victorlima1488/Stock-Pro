@@ -1,9 +1,9 @@
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
 from cryptography.hazmat.backends import default_backend
 from routers.shared_data import UserRegister, temp_data
-from database.sqlite.connection import conexao_do_banco
 from cryptography.hazmat.primitives import hashes
 from fastapi import APIRouter, HTTPException
+from utils.User import User, SessionLocal
 from passlib.context import CryptContext
 from email.mime.text import MIMEText
 from dotenv import load_dotenv
@@ -71,16 +71,25 @@ def send_verification_email(username, email, verification_code):
     server.login(sender_email, sender_password)
     server.sendmail(sender_email, email, message.as_string())
     server.quit()
+    
+# Criando uma função para buscar um usuário pelo nome de usuário
+def get_user_by_username(username):
+    # Criando uma sessão do banco de dados
+    # Session = sessionmaker(bind=engine)
+    session = SessionLocal()
+
+    # Usando parâmetros de ligação para evitar injeção de SQL
+    user = session.query(User).filter(User.username == username).first()
+
+    # Fechando a sessão do banco de dados
+    session.close()
+
+    return user
 
 # Rota de registro de usuário
 @auth_router.post('/register', response_model=UserRegister)
 async def register(user: UserRegister):
-    database = conexao_do_banco()
-    cursor = database.cursor()
-
-    # Verificando se o usuário já existe
-    cursor.execute(f"SELECT * FROM users WHERE username = '{user.username}'")
-    has_a_user = cursor.fetchone()
+    has_a_user = get_user_by_username(user.username)
 
     if has_a_user:
         raise HTTPException(status_code=400, detail="Username already exists")
